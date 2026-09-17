@@ -172,3 +172,38 @@ def test_boost_telt_alleen_vol_bij_de_opdrachtgever(instellingen, profielen):
     )
     assert beoordeel(bij_onderwijs, profielen["Bellen"], instellingen).score >= instellingen["drempel"]
     assert beoordeel(terloops, profielen["Bellen"], instellingen).score < instellingen["drempel"]
+
+
+def test_geheugen_voorkomt_een_tweede_mail_in_dezelfde_week(tmp_path):
+    from datetime import date
+
+    from opdrachtalert.state import Geheugen
+
+    pad = tmp_path / "gezien.json"
+    vrijdag = date(2026, 9, 18)
+
+    geheugen = Geheugen(pad)
+    assert not geheugen.al_verstuurd_deze_week(vrijdag)
+    geheugen.noteer(["abc"], vrijdag)
+    geheugen.noteer_verzending(vrijdag)
+    geheugen.opslaan()
+
+    opnieuw = Geheugen(pad)
+    assert opnieuw.al_verstuurd_deze_week(vrijdag)
+    # Een uitgestelde run later diezelfde dag of dat weekend mag niet nog eens mailen.
+    assert opnieuw.al_verstuurd_deze_week(date(2026, 9, 19))
+    # De week erna wel weer.
+    assert not opnieuw.al_verstuurd_deze_week(date(2026, 9, 25))
+    assert not opnieuw.is_nieuw("abc")
+
+
+def test_geheugen_overleeft_een_kapot_bestand(tmp_path):
+    from datetime import date
+
+    from opdrachtalert.state import Geheugen
+
+    pad = tmp_path / "gezien.json"
+    pad.write_text("{ dit is geen json", encoding="utf-8")
+    geheugen = Geheugen(pad)
+    assert geheugen.is_nieuw("abc")
+    assert not geheugen.al_verstuurd_deze_week(date(2026, 9, 18))

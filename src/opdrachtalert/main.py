@@ -211,13 +211,25 @@ def draai(args: argparse.Namespace) -> int:
         log.info("Droogloop: geen mail verstuurd, geheugen niet bijgewerkt.")
         return 0
 
+    if geheugen.al_verstuurd_deze_week(vandaag) and not args.forceer:
+        log.info(
+            "Deze week is al een alert verstuurd (%s). Niets gedaan. "
+            "Gebruik --forceer om toch te versturen.",
+            geheugen.laatste_verzending,
+        )
+        return 0
+
     instellingen = MailInstellingen()
     if not instellingen.compleet:
-        log.error("Mail niet verstuurd, ontbrekende instellingen: %s", ", ".join(instellingen.ontbrekend()))
+        log.error(
+            "Mail niet verstuurd, ontbrekende instellingen: %s",
+            ", ".join(instellingen.ontbrekend()),
+        )
         return 2
 
     verstuur(instellingen, bouw_bericht(instellingen, onderwerp, tekst, html))
     geheugen.noteer(sorted(getoond), vandaag)
+    geheugen.noteer_verzending(vandaag)
     geheugen.opschonen(vandaag=vandaag)
     geheugen.opslaan()
     return 0
@@ -276,6 +288,11 @@ def main(argv: list[str] | None = None) -> int:
         "--lees-ruwe",
         dest="lees_ruwe",
         help="scoor opnieuw vanuit een eerder bewaard JSON-bestand, zonder op te halen",
+    )
+    parser.add_argument(
+        "--forceer",
+        action="store_true",
+        help="ook versturen als er deze week al een alert uitging",
     )
     parser.add_argument(
         "--diagnose",

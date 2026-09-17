@@ -93,9 +93,13 @@ Zet deze secrets onder **Settings → Secrets and variables → Actions**:
 | `FLEXTENDER_LIST_URL` | nee | De URL van de aanvragenlijst die je na inloggen ziet. Zie hieronder. |
 
 De workflow [`.github/workflows/opdrachtalert.yml`](.github/workflows/opdrachtalert.yml)
-draait elke vrijdag. GitHub plant op UTC, dus er staan twee tijden in (05:00 en
-06:00 UTC); de eerste stap laat alleen de run door die in Amsterdam echt 07:00
-is. Zo klopt de tijd ook na de overgang naar wintertijd.
+draait elke vrijdag rond 07:00 Nederlandse tijd. GitHub plant op UTC, dus er
+staan twee tijden in (05:00 en 06:00 UTC) — de ene klopt in de zomertijd, de
+andere in de wintertijd. GitHub kan een geplande run bovendien tot een uur
+uitstellen, dus de workflow hanteert een ruim venster (vrijdag tussen 06:00 en
+11:00 lokaal) en bewaakt de alert zélf dat er per week maar één mail uitgaat:
+staat er in `state/gezien.json` al een verzending in deze ISO-week, dan stopt hij.
+Met `--forceer` verstuur je alsnog.
 
 Je kunt hem ook met de hand starten via **Actions → Wekelijkse opdrachtalert →
 Run workflow**, eventueel als droogloop of met een andere drempel.
@@ -163,7 +167,9 @@ die je zelf in je browser ziet als je bent ingelogd en naar je aanvragen kijkt.
 
 ## Wat de alert onthoudt
 
-`state/gezien.json` houdt bij welke uitvragen al eens in een mail stonden.
+`state/gezien.json` houdt twee dingen bij: welke uitvragen al eens in een mail
+stonden, en wanneer de laatste mail uitging (dat laatste voorkomt een tweede
+mail in dezelfde week).
 Nieuwe krijgen het label **NIEUW**; eerder gemelde uitvragen blijven wel staan
 zolang ze open zijn, zodat je ze niet kwijtraakt. De workflow commit dat bestand
 na iedere verzending terug naar de repository. Bij een droogloop verandert er
