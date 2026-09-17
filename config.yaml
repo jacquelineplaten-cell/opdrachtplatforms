@@ -1,0 +1,194 @@
+# Instellingen voor de wekelijkse opdrachtalert.
+# Geheimen (wachtwoorden, e-mailadres) staan NIET hier maar in GitHub Secrets.
+
+mail:
+  onderwerp: "Opdrachtalert innovatiegroep - week {week} ({datum})"
+  # Ontvanger komt uit de secret MAIL_TO. Hier alleen als lokale fallback bij testen.
+  ontvanger_fallback: ""
+
+scoring:
+  # Alleen uitvragen met deze score of hoger komen in de mail (1-10).
+  drempel: 7
+  # Maximaal aantal uitvragen per persoon in de mail (hoogste scores eerst).
+  max_per_persoon: 12
+  # Hoeveel punten een omschrijving er maximaal nog bij kan doen. Wordt gebruikt
+  # om te bepalen of het de moeite is om de detailpagina op te halen: haalt een
+  # uitvraag op titel en opdrachtgever alleen al niet (drempel - marge), dan
+  # halen we de omschrijving niet op. Hoger = meer verzoeken, minder kans dat we
+  # iets missen.
+  voorselectie_marge: 4
+
+  # Rol en sector delen de teamleden grotendeels met elkaar: bijna iedereen is
+  # "kwartiermaker" of "projectleider" en werkt voor gemeenten. Expertise is wél
+  # onderscheidend. Daarom weegt expertise het zwaarst; anders komt dezelfde
+  # generieke klus bij iedereen in de mail.
+  gewichten:
+    rol_in_titel: 2.5        # functietitel uit het profiel staat in de titel
+    rol_in_tekst: 0.5        # ... of alleen in de omschrijving
+    sector_in_opdrachtgever: 1.5
+    sector_in_tekst: 0.5
+    expertise_in_titel: 1.3
+    expertise_in_tekst: 0.55
+    kern_in_titel: 0.8
+    kern_in_tekst: 0.3
+    # Een boost die alleen in de lopende tekst voorkomt in plaats van bij de
+    # opdrachtgever, telt voor dit deel mee.
+    boost_in_tekst_aandeel: 0.4
+
+  maxima:                    # per categorie, zodat een lange tekst niet alles wint
+    rol: 2.5
+    sector: 1.8
+    expertise: 3.5
+    kern: 1.5
+    boost: 6.0
+
+  # Jullie zijn innovatieadviseurs. Een uitvraag zonder enig vernieuwingssignaal
+  # is dus zelden raak, ook al past de functietitel en de sector. Zo'n uitvraag
+  # komt niet hoger dan "cap_zonder_signaal" en haalt de drempel dus niet.
+  # Een persoonlijke boost (bv. de onderwijswens van Bellen) omzeilt deze poort.
+  # Zet actief op false om alles weer mee te laten tellen.
+  innovatie_poort:
+    actief: true
+    cap_zonder_signaal: 6
+    sterke_termen:
+      - innovatie
+      - innoveren
+      - vernieuwing
+      - vernieuwen
+      - transformatie
+      - transitie
+      - kwartiermaker
+      - design thinking
+      - ontwerpend
+      - co-creatie
+      - conceptontwikkeling
+      - prototype
+      - proof of concept
+      - experiment
+      - pilot
+      - opschaling
+      - doorontwikkeling
+      - toekomstverkenning
+      - scenario
+      - strategieontwikkeling
+      - visieontwikkeling
+      - organisatieontwikkeling
+      - veranderopgave
+      - veranderkunde
+      - digitale transformatie
+      - kunstmatige intelligentie
+      - artificial intelligence
+      - portfoliomanagement
+      - living lab
+      - innovatielab
+      - hackathon
+      - design sprint
+
+  # Innovatiesignalen die voor de hele groep gelden (de kern van wat jullie doen).
+  kern_termen:
+    - innovatie
+    - innoveren
+    - vernieuwing
+    - transformatie
+    - transitie
+    - verandering
+    - strategie
+    - visie
+    - kwartiermaker
+    - toekomstverkenning
+    - design thinking
+    - ontwerpend
+    - co-creatie
+    - conceptontwikkeling
+    - proefopstelling
+    - experiment
+    - pilot
+    - prototype
+    - opschaling
+    - doorontwikkeling
+    - organisatieontwikkeling
+    - dienstverlening
+    - klantreis
+    - procesverbetering
+    - programmasturing
+    - portfoliomanagement
+
+  # Uitvoerende ICT- en specialistenrollen: geen innovatieadvies. Trekken de score omlaag,
+  # tenzij de term ook expliciet in het profiel van die persoon staat.
+  uitsluit_termen:
+    - developer
+    - ontwikkelaar
+    - programmeur
+    - engineer
+    - tester
+    - testautomatiseerder
+    - beheerder
+    - systeembeheerder
+    - netwerkbeheerder
+    - databasebeheerder
+    - applicatiebeheer
+    - functioneel beheerder
+    - devops
+    - sre
+    - solution architect
+    - software architect
+    - technisch architect
+    - infrastructuur specialist
+    - cyber security specialist
+    - penetratietester
+    - scrum master
+    - sap consultant
+    - oracle
+    - salesforce
+    - servicenow
+    - .net
+    - java
+    - python developer
+    - front-end
+    - back-end
+    - full stack
+    - datawarehouse
+    - etl
+    - bi-specialist
+    - helpdesk
+    - servicedesk
+    - secretaresse
+    - managementassistent
+    - jurist
+    - juridisch adviseur
+    - handhaver
+    - inkoper
+    - contractmanager
+    - financieel adviseur
+    - controller
+    - accountant
+    - salarisadministratie
+    - vertrouwenspersoon
+    - verpleegkundige
+    - administratief ondersteuner
+    - administratief medewerker
+    - ondersteuner
+    - assistent
+    - baliemedewerker
+    - telefonist
+    - notulist
+  uitsluit_straf: 4.0        # aftrek per gevonden uitsluitterm (max 2x)
+
+platforms:
+  striive:       {actief: true}    # levert Between + HeadFirst (+ StarApple)
+  freep:         {actief: true}
+  ukomst:        {actief: true}
+  needstaffing:  {actief: true}
+  circle8:       {actief: true}
+  flextender:    {actief: true}    # werkt alleen met FLEXTENDER_* secrets
+
+ophalen:
+  timeout_seconden: 45
+  pauze_tussen_verzoeken: 0.4
+  # Harde bovengrens op het aantal detailpagina's per platform. De voorselectie
+  # (zie voorselectie_marge) houdt het aantal normaal ruim hieronder; deze grens
+  # is er alleen om te voorkomen dat een platform met plotseling veel aanbod de
+  # hele run laat vastlopen.
+  max_details_per_platform: 300
+  # Uitvragen ouder dan dit aantal dagen worden overgeslagen.
+  max_leeftijd_dagen: 30

@@ -1,0 +1,107 @@
+name: Wekelijkse opdrachtalert
+
+on:
+  schedule:
+    # GitHub cron draait op UTC. Deze twee tijden dekken 07:00 in Amsterdam het
+    # hele jaar: 05:00 UTC in de zomertijd en 06:00 UTC in de wintertijd. De
+    # stap "Alleen om 07:00 in Amsterdam" laat de verkeerde van de twee vallen.
+    - cron: "0 5 * * 5"
+    - cron: "0 6 * * 5"
+  workflow_dispatch:
+    inputs:
+      droogloop:
+        description: "Alleen tonen wat er verstuurd zou worden, niet mailen"
+        type: boolean
+        default: false
+      drempel:
+        description: "Afwijkende drempelscore (1-10)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opdrachtalert
+  cancel-in-progress: false
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Alleen om 07:00 in Amsterdam doorgaan
+        id: tijd
+        if: github.event_name == 'schedule'
+        run: |
+          uur=$(TZ=Europe/Amsterdam date +%H)
+          echo "Lokale tijd in Amsterdam: $(TZ=Europe/Amsterdam date)"
+          if [ "$uur" != "07" ]; then
+            echo "Niet 07:00 lokaal (nu $uur uur) - deze run stopt hier."
+            echo "doorgaan=nee" >> "$GITHUB_OUTPUT"
+          else
+            echo "doorgaan=ja" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Repository ophalen
+        if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
+        uses: actions/checkout@v4
+
+      - name: Python installeren
+        if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Afhankelijkheden installeren
+        if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Alert draaien
+        if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
+        env:
+          PYTHONPATH: src
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM || secrets.SMTP_USER }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          FLEXTENDER_USERNAME: ${{ secrets.FLEXTENDER_USERNAME }}
+          FLEXTENDER_PASSWORD: ${{ secrets.FLEXTENDER_PASSWORD }}
+          FLEXTENDER_LIST_URL: ${{ secrets.FLEXTENDER_LIST_URL }}
+        run: |
+          argumenten=(--uitvoer out/alert.html)
+          if [ "${{ inputs.droogloop }}" = "true" ]; then
+            argumenten+=(--droogloop)
+          fi
+          if [ -n "${{ inputs.drempel }}" ]; then
+            argumenten+=(--drempel "${{ inputs.drempel }}")
+          fi
+          python -m opdrachtalert.main "${argumenten[@]}"
+
+      - name: Mail bewaren als artifact
+        if: always() && (github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja')
+        uses: actions/upload-artifact@v4
+        with:
+          name: opdrachtalert-html
+          path: out/alert.html
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Onthouden wat al verstuurd is
+        if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
+        run: |
+          if [ -n "$(git status --porcelain state/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state/
+            git commit -m "Bijwerken verstuurde uitvragen $(date -u +%Y-%m-%d)"
+            git push
+          else
+            echo "Geen wijziging in state/, niets te committen."
+          fi

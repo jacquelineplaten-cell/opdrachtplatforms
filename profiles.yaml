@@ -1,0 +1,551 @@
+# Teamprofielen innovatieadviseurs - bron: Salesprofielen_innovatie_groep.xlsx (blad "Blad2").
+#
+# Dit bestand stuurt de scoring aan. Pas het gerust met de hand aan: elk woord dat je
+# hier toevoegt of weghaalt verandert direct wat er in de vrijdagmail terechtkomt.
+#
+# Per persoon:
+#   rollen      - functietitels die bij deze persoon passen. Tellen zwaar mee als ze in
+#                 de TITEL van een uitvraag staan, licht als ze in de tekst staan.
+#   sectoren    - opdrachtgevers/markten. Gematcht op opdrachtgever + volledige tekst.
+#   expertise   - vakinhoud, methoden en thema's. Gematcht op de volledige tekst.
+#   uitsluiten  - termen die deze persoon juist NIET wil; trekken de score omlaag.
+#   boost       - extra punten bij specifieke termen (bv. een expliciete wens).
+#   actief      - op false zetten om iemand tijdelijk uit de mail te halen.
+#
+# Matching is hoofdletterongevoelig en op hele woorden (met flexibele meervoud/koppelteken).
+
+personen:
+  - naam: Raben
+    actief: true
+    rollen:
+      - programmamanager
+      - programmatrekker
+      - programmaleider
+      - projectleider
+      - opdrachtleider
+      - lead adviseur
+      - senior adviseur
+      - strategisch adviseur
+      - adviseur strategie
+      - adviseur innovatie
+      - innovatieadviseur
+      - kwartiermaker
+      - transitiemanager
+      - propositiemanager
+      - business lead
+    sectoren:
+      - gemeente
+      - ministerie
+      - uitvoeringsorganisatie
+      - rijksoverheid
+      - UWV
+      - Belastingdienst
+      - SVB
+      - DUO
+      - COA
+      - BZK
+      - SZW
+      - IenW
+      - sociaal domein
+      - werk en inkomen
+      - participatie
+      - schuldhulpverlening
+      - jeugd
+      - Wmo
+      - onderwijsinstelling
+      - hogeschool
+      - universiteit
+      - mbo
+      - kennisinstelling
+      - woningcorporatie
+      - projectontwikkelaar
+      - gebouwde omgeving
+      - ontwikkelmaatschappij
+      - samenwerkingsverband
+    expertise:
+      - doelgroeponderzoek
+      - doelgroepsegmentatie
+      - segmentatie
+      - toekomstverkenning
+      - strategieontwikkeling
+      - koersbepaling
+      - positionering
+      - visieontwikkeling
+      - meerjarenperspectief
+      - businessmodel
+      - propositie
+      - publieke dienstverlening
+      - dienstverlening
+      - service design
+      - organisatieontwikkeling
+      - organisatie-inrichting
+      - veranderkunde
+      - gedragsverandering
+      - innovatiesysteem
+      - innovatieportfolio
+      - portfoliomanagement
+      - innovatieproces
+      - innovatievermogen
+      - opschaling
+      - co-creatie
+      - design thinking
+      - klantgerichte innovatie
+      - digitalisering
+      - kunstmatige intelligentie
+    uitsluiten: []
+    boost: {}
+
+  - naam: Marte
+    actief: true
+    rollen:
+      - onderzoeker
+      - ontwerper
+      - service designer
+      - design researcher
+      - facilitator
+      - programmasecretaris
+      - projectleider
+      - conceptontwikkelaar
+    sectoren:
+      - sociaal domein
+      - zorg
+      - ziekenhuis
+      - medische technologie
+      - meldkamer
+      - veiligheidsregio
+      - veiligheid
+      - gemeente
+    expertise:
+      - gebruikersonderzoek
+      - kwalitatief onderzoek
+      - interviews
+      - data-analyse
+      - co-creatie
+      - design thinking
+      - behavioural design
+      - behavioral design
+      - gedragsontwerp
+      - gedragsverandering
+      - productontwikkeling
+      - prototype
+      - concept
+      - ideation
+      - brainstorm
+      - werksessie
+      - klantreis
+      - customer journey
+      - social design
+      - inclusie
+    uitsluiten:
+      - softwareontwikkeling
+    boost: {}
+
+  - naam: Gaber
+    actief: false   # geen profielgegevens aangeleverd in de Excel (kolom D is leeg)
+    rollen: []
+    sectoren: []
+    expertise: []
+    uitsluiten: []
+    boost: {}
+
+  - naam: Nanko
+    actief: true
+    rollen:
+      - kwartiermaker
+      - ontwerper
+      - onderzoeker
+      - conceptontwikkelaar
+      - facilitator
+      - adviseur
+    sectoren:
+      - woningbouw
+      - volkshuisvesting
+      - sociale zaken
+      - participatie
+      - sociaal domein
+      - onderwijs
+      - gemeente
+      - woningcorporatie
+    expertise:
+      - sociale innovatie
+      - social design
+      - frame innovation
+      - behavioral design
+      - behavioural design
+      - gedragsontwerp
+      - onderwijskundig ontwerp
+      - co-design
+      - co-creatie
+      - empathisch onderzoek
+      - kwalitatief onderzoek
+      - creatieve sessies
+      - werksessie
+      - toekomstverkenning
+      - scenario
+      - strategie
+      - visieontwikkeling
+      - talentontwikkeling
+      - professionalisering
+      - leren en ontwikkelen
+      - opleiding
+      - event
+    uitsluiten: []
+    boost: {}
+
+  - naam: Sjaak
+    actief: true
+    rollen:
+      - innovatiemanager
+      - interim manager
+      - interim innovatiemanager
+      - kwartiermaker
+      - afdelingshoofd
+      - teamleider
+      - manager innovatie
+      - adviseur innovatie
+      - innovatieadviseur
+      - strategisch adviseur
+    sectoren:
+      - uitvoeringsorganisatie
+      - publieke uitvoeringsorganisatie
+      - zorg
+      - ziekenhuis
+      - gemeente
+      - ministerie
+      - semi-publiek
+      - verzekeraar
+      - pensioenfonds
+    expertise:
+      - innovatie organiseren
+      - innovatiefunctie
+      - innovatievermogen
+      - innovatieafdeling
+      - innovatielab
+      - innovatiestrategie
+      - strategische heroriëntatie
+      - positionering
+      - bedrijfsmodel
+      - businessmodel
+      - organisatieontwikkeling
+      - teamontwikkeling
+      - verandertraject
+      - veranderkunde
+      - professionalisering
+      - innovatieproces
+    uitsluiten: []
+    boost: {}
+
+  - naam: Stine
+    actief: true
+    rollen:
+      - projectleider
+      - innovatiemanager
+      - innovatieadviseur
+      - adviseur innovatie
+      - eventmanager
+      - programmamanager
+      - adviseur procesoptimalisatie
+      - kwartiermaker
+      - coördinator
+    sectoren:
+      - gemeente
+      - ministerie
+      - provincie
+      - rijksoverheid
+      - overheid
+      - onderwijs
+      - ROC
+      - universiteit
+      - hogeschool
+      - veiligheid
+      - veiligheidsregio
+      - woningbouw
+      - campus
+    expertise:
+      - innovatie organiseren
+      - lerende organisatie
+      - innovatielab
+      - innovatiehub
+      - impactlab
+      - living lab
+      - innovatie-ecosysteem
+      - ecosysteem
+      - publiek-private samenwerking
+      - hackathon
+      - design sprint
+      - event
+      - eventmanagement
+      - projectmanagement
+      - procesoptimalisatie
+      - customer journey
+      - klantreis
+      - interviews
+      - data-analyse
+      - faciliteren
+      - werksessie
+      - veranderkunde
+    uitsluiten: []
+    boost: {}
+
+  - naam: Mesjka
+    actief: false   # geen profielgegevens aangeleverd in de Excel (kolom H is leeg)
+    rollen: []
+    sectoren: []
+    expertise: []
+    uitsluiten: []
+    boost: {}
+
+  - naam: Bellen
+    actief: true
+    rollen:
+      - projectleider
+      - programmamanager
+      - facilitator
+      - procesontwerper
+      - analist
+      - stakeholdermanager
+      - kwartiermaker
+      - adviseur
+      - trainer
+    sectoren:
+      - onderwijs
+      - onderwijsinstelling
+      - hogeschool
+      - universiteit
+      - mbo
+      - ROC
+      - DUO
+      - OCW
+      - school
+      - schoolbestuur
+      - samenwerkingsverband
+    expertise:
+      - onderwijsontwikkeling
+      - curriculum
+      - organisatieontwikkeling
+      - strategie
+      - visie
+      - projectmanagement
+      - innovatie
+      - design thinking
+      - agile
+      - training
+      - faciliteren
+      - werksessie
+      - teamontwikkeling
+      - systemisch denken
+      - stakeholdermanagement
+    uitsluiten: []
+    # Expliciete wens uit de Excel (rij "Overig"): alle onderwijsuitvragen zien.
+    # Deze waarde is bewust hoog: samen met de sectortreffer haalt elke uitvraag
+    # van een onderwijsopdrachtgever daarmee de drempel, ook zonder
+    # vernieuwingssignaal. Verlaag hem naar 3 als het te veel ruis geeft.
+    boost:
+      onderwijs: 5.5
+      onderwijsinstelling: 5.5
+      hogeschool: 5.5
+      universiteit: 5.5
+      mbo: 5.5
+      ROC: 5.5
+      DUO: 5.5
+      OCW: 5.5
+      school: 5.5
+
+  - naam: Mill
+    actief: true
+    rollen:
+      - trainer
+      - conceptontwikkelaar
+      - ideecoach
+      - facilitator
+      - innovator
+      - kwartiermaker
+      - product owner
+      - innovatieadviseur
+      - adviseur innovatie
+      - spreker
+    sectoren:
+      - overheid
+      - gemeente
+      - ministerie
+      - zorg
+      - ziekenhuis
+      - commercieel
+      - onderwijs
+    expertise:
+      - kunstmatige intelligentie
+      - artificial intelligence
+      - generatieve AI
+      - AI-adoptie
+      - digitale transformatie
+      - human computer interaction
+      - systemic design
+      - systemisch ontwerpen
+      - social design
+      - ontwerpend innoveren
+      - futuring
+      - toekomstverkenning
+      - scenario
+      - strategie
+      - training
+      - opleiding
+      - agile
+      - product owner
+      - conceptontwikkeling
+      - innovatie
+    uitsluiten: []
+    boost: {}
+
+  - naam: Mysia
+    actief: true
+    rollen:
+      - projectmanager
+      - projectleider
+      - programmamanager
+      - kwartiermaker
+      - opdrachtgever
+      - adviseur
+    sectoren:
+      - gemeente
+      - woningcorporatie
+      - corporatie
+      - provincie
+      - regio
+      - projectontwikkelaar
+      - bouwbedrijf
+      - vastgoed
+      - gebiedsontwikkeling
+      - rijksvastgoedbedrijf
+      - COA
+    expertise:
+      - projectmanagement
+      - opdrachtgeverschap
+      - projectorganisatie
+      - projectbeheersing
+      - woningbouwopgave
+      - woningbouw
+      - sociale woningbouw
+      - huisvesting
+      - opvang
+      - vastgoed
+      - gebiedsontwikkeling
+      - social design
+      - innovatie
+      - training
+      - stakeholdermanagement
+    uitsluiten: []
+    boost: {}
+
+  - naam: Vis
+    actief: true
+    rollen:
+      - innovatiemanager
+      - innovatiecoördinator
+      - coördinator
+      - ideecoach
+      - strategisch adviseur innovatie
+      - adviseur innovatie
+      - innovatieadviseur
+      - beleidsmedewerker innovatie
+      - portfoliomanager
+      - projectleider
+    sectoren:
+      - netbeheerder
+      - defensie
+      - energie
+      - energiebedrijf
+      - havenbedrijf
+      - luchtvaart
+      - luchthaven
+      - mobiliteit
+      - infrastructuur
+      - infra
+      - Rijkswaterstaat
+      - ProRail
+      - waterschap
+      - gemeente
+      - industrie
+    expertise:
+      - innovatiemanagement
+      - innovatieportfolio
+      - portfoliomanagement
+      - innovatiebesluitvorming
+      - besluitvorming
+      - dashboard
+      - innovatieproces
+      - innovatieaanpak
+      - klantreis
+      - customer journey
+      - procesontwerp
+      - design sprint
+      - design thinking
+      - innovatiecoaching
+      - werksessie
+      - hackathon
+      - lego serious play
+      - agile
+      - scrum
+      - business case
+      - verdienmodel
+      - innovatiedistrict
+    uitsluiten: []
+    boost: {}
+
+  - naam: Roderik
+    actief: true
+    rollen:
+      - projectleider
+      - programmamanager
+      - programmasecretaris
+      - innovatiemanager
+      - implementatiemanager
+      - adviseur operationele transformatie
+      - adviseur procesoptimalisatie
+      - innovatiemakelaar
+      - adviseur innovatie
+      - innovatieadviseur
+      - coördinator
+    sectoren:
+      - defensie
+      - Koninklijke Marine
+      - landmacht
+      - luchtmacht
+      - marechaussee
+      - KMar
+      - politie
+      - douane
+      - veiligheid
+      - justitie
+      - JenV
+      - NAVO
+      - onderwijs
+      - DUO
+      - ROC
+      - universiteit
+      - gemeente
+      - netbeheerder
+    expertise:
+      - innovatie
+      - propositieontwikkeling
+      - projectmanagement
+      - programmasturing
+      - governance
+      - besluitvorming
+      - bestuurlijke besluitvorming
+      - strategie
+      - organisatiemodel
+      - procesoptimalisatie
+      - veranderkunde
+      - stakeholdermanagement
+      - implementatie
+      - adoptie
+      - opschaling
+      - pilot
+      - prototype
+      - roadmap
+      - crisismanagement
+      - materieel
+      - capaciteitsopbouw
+      - operationele transformatie
+    uitsluiten: []
+    boost: {}

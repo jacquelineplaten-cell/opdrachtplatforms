@@ -1,0 +1,28 @@
+[
+ {
+  "id": 101112,
+  "slug": "hrm-experience-specialist",
+  "title": "Hrm experience specialist",
+  "segment": "Personeel en Organisatie",
+  "created_date": "2026-09-17T16:17:10.804766+02:00",
+  "location_province": "Zuid-Holland",
+  "company_name": "De Dienst Justitiële Inrichtingen (DJI)",
+  "company_logo": "https://freepapi-assets.s3.amazonaws.com/media/logos/None/De_Dienst_Justitiele_Inrichtingen_DJI.jpg",
+  "deta": true,
+  "hours": 28,
+  "rate_max": "122"
+ },
+ {
+  "id": 101113,
+  "slug": "operationeel-beheerder-microsoft-365-2",
+  "title": "Operationeel beheerder microsoft 365",
+  "segment": "Verkeer vervoer nautisch",
+  "created_date": "2026-09-17T16:17:08.430474+02:00",
+  "location_province": "Zuid-Holland",
+  "company_name": "Ministerie van Economische Zaken en Klimaat DICTU",
+  "company_logo": "https://freepapi-assets.s3.amazonaws.com/media/logos/None/Ministerie_van_Economische_Zaken_en_Klimaat_DICTU.jpg",
+  "deta": true,
+  "hours": 36,
+  "rate_max": "80"
+ }
+]

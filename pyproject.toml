@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opdrachtalert"
+version = "1.0.0"
+description = "Wekelijkse e-mailalert met relevante uitvragen van Nederlandse opdrachtplatforms, per teamlid gescoord"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.32",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.2",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.44"]   # nodig voor Circle8 achter de botbescherming
+excel = ["openpyxl>=3.1"]        # nodig voor tools/profielen_uit_excel.py
+test = ["pytest>=8.0"]
+
+[project.scripts]
+opdrachtalert = "opdrachtalert.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
