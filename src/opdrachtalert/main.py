@@ -70,6 +70,7 @@ def verzamel(config: dict, profielen, alleen: list[str] | None = None) -> list[P
                     ophaler,
                     voorselectie=voorselectie,
                     max_details=int(ophalen["max_details_per_platform"]),
+                    platform_config=config["platforms"].get(sleutel, {}),
                 )
             )
         except Exception as exc:  # noqa: BLE001 - nooit de hele alert laten vallen

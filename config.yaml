@@ -179,7 +179,14 @@ platforms:
   freep:         {actief: true}
   ukomst:        {actief: true}
   needstaffing:  {actief: true}
-  circle8:       {actief: true}
+  circle8:
+    actief: true
+    # Circle8 staat achter botbescherming; lukt een gewoon verzoek niet, dan
+    # proberen we een echte browser. Die stap is de traagste van de hele run,
+    # dus staat er een harde grens op. Op false zetten slaat de browser over.
+    gebruik_browser: true
+    browser_laad_timeout_seconden: 60
+    browser_selector_timeout_seconden: 20
   flextender:    {actief: true}    # werkt alleen met FLEXTENDER_* secrets
 
 ophalen:

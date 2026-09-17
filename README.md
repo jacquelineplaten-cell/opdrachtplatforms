@@ -151,6 +151,11 @@ Circle8 draait achter de botbescherming van Vercel. Vanaf een datacenter-IP
 eerst een gewoon verzoek en daarna een echte browser (Chromium via Playwright),
 en leest vervolgens de JSON-LD-vacaturegegevens of anders de links op de pagina.
 
+De browserstap is de traagste van de hele run; in `config.yaml` staat onder
+`platforms.circle8` een harde grens (`browser_laad_timeout_seconden`,
+`browser_selector_timeout_seconden`) en kun je hem met `gebruik_browser: false`
+helemaal overslaan.
+
 Lukt het niet, dan **staat dat met zoveel woorden in de platformstatus onderaan
 de mail** en gaat de rest gewoon door. Vanuit de ontwikkelomgeving waarin dit
 gebouwd is, bleef Circle8 geblokkeerd; of het vanaf GitHub wél lukt, blijkt bij

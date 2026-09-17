@@ -38,7 +38,7 @@ def _is_geblokkeerd(html: str) -> bool:
     return any(fragment in kop for fragment in BLOKKADE)
 
 
-def _via_browser(url: str) -> str:
+def _via_browser(url: str, laad_timeout: float, selector_timeout: float) -> str:
     """Rendert de pagina met de voorgeïnstalleerde Chromium van Playwright."""
     from playwright.sync_api import sync_playwright
 
@@ -54,9 +54,9 @@ def _via_browser(url: str) -> str:
         browser = p.chromium.launch(executable_path=uitvoerbaar or None, args=startargs)
         try:
             pagina = browser.new_page(locale="nl-NL")
-            pagina.goto(url, wait_until="domcontentloaded", timeout=90_000)
+            pagina.goto(url, wait_until="domcontentloaded", timeout=laad_timeout * 1000)
             try:
-                pagina.wait_for_selector("a[href*='opdracht']", timeout=45_000)
+                pagina.wait_for_selector("a[href*='opdracht']", timeout=selector_timeout * 1000)
             except Exception:  # noqa: BLE001 - dan pakken we wat er wél staat
                 pagina.wait_for_timeout(5_000)
             return pagina.content()
@@ -139,7 +139,16 @@ def _uit_links(soep: BeautifulSoup) -> list[Uitvraag]:
     return list(gezien.values())
 
 
-def haal_op(ophaler: Ophaler, gebruik_browser: bool = True, **_: object) -> list[PlatformResultaat]:
+def haal_op(
+    ophaler: Ophaler,
+    platform_config: dict | None = None,
+    **_: object,
+) -> list[PlatformResultaat]:
+    instellingen = platform_config or {}
+    gebruik_browser = bool(instellingen.get("gebruik_browser", True))
+    laad_timeout = float(instellingen.get("browser_laad_timeout_seconden", 60))
+    selector_timeout = float(instellingen.get("browser_selector_timeout_seconden", 20))
+
     html = ""
     notities: list[str] = []
     try:
@@ -150,7 +159,7 @@ def haal_op(ophaler: Ophaler, gebruik_browser: bool = True, **_: object) -> list
     if (not html or _is_geblokkeerd(html)) and gebruik_browser:
         notities.append("botbescherming actief, browser geprobeerd")
         try:
-            html = _via_browser(LIJST)
+            html = _via_browser(LIJST, laad_timeout, selector_timeout)
         except Exception as exc:  # noqa: BLE001
             return [
                 PlatformResultaat(
