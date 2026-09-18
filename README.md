@@ -13,10 +13,10 @@ mail stond.
 | Platform | Hoe we het ophalen | Bijzonderheden |
 | --- | --- | --- |
 | **Between** en **HeadFirst** | Publieke Striive-API (`striive-cms.codebridge.nl/api/jobs`) | Beide sites tonen dezelfde Striive-lijst, dus we halen die één keer op. Per uitvraag staat erbij onder welk merk je kunt reageren. |
-| **Freep** | Publieke API (`api.freep.nl/v1/assignments`) plus de detailpagina | Enkele honderden uitvragen; de omschrijving halen we alleen op voor uitvragen die na een eerste check kansrijk zijn. |
+| **Freep** | Publieke API: `api.freep.nl/v1/assignments` voor de lijst, `api.freep.nl/v1/assignment/<slug>/` voor de omschrijving | Enkele honderden uitvragen; de omschrijving halen we alleen op voor uitvragen die de drempel nog kunnen halen. Bewust via de API en niet via www.freep.nl: die website weigert verzoeken vanaf datacenter-IP's zoals een GitHub-runner. |
 | **Ukomst** | WordPress REST API (`ukomst.nl/wp-json/wp/v2/jobs`) plus de detailpagina | Klein aanbod, sterk IT-gericht. Storingsberichten die Ukomst soms als opdracht publiceert, filteren we eruit. |
 | **Need Staffing** | HTML-lijst, 20 per pagina | Zonder inlog. |
-| **Circle8** | HTML, zo nodig via een echte browser | Circle8 staat achter de botbescherming van Vercel. Zie [Circle8](#circle8) hieronder. |
+| **Circle8** | HTML | Komt er niet door: Circle8 staat achter de botbescherming van Vercel. Zie [Circle8](#circle8) hieronder. |
 | **Flextender** | Inloggen en daarna de aanvragenlijst | Werkt alleen met inloggegevens. Zie [Flextender](#flextender) hieronder. |
 
 Staat dezelfde opdracht op meerdere platforms, dan zie je hem één keer, met
@@ -59,8 +59,20 @@ Bijna alles wat je wilt bijstellen, zit in twee bestanden:
   Zet `actief: false`.
 - **[`config.yaml`](config.yaml)** – de drempel (`drempel: 7`), het maximum
   aantal uitvragen per persoon, de gewichten, de innovatiepoort en welke
-  platforms aanstaan. Te weinig in de mail? Zet `drempel` op 6 en kijk wat
-  erbij komt.
+  platforms aanstaan.
+
+Die drempel is de grootste knop. Gemeten op het aanbod van 18 september 2026
+(523 uitvragen):
+
+| Drempel | Matches | Teamleden met een match |
+| --- | --- | --- |
+| 7 | 22 | 4 van de 10 |
+| 6 | 69 | 10 van de 10 |
+| 5 | 116 | 10 van de 10, bijna allemaal tegen het maximum van 12 aan |
+
+Zeven houdt het scherp maar laat in een magere week mensen leeg; zes vult ieders
+lijstje maar levert meer twijfelgevallen. Vijf is te ruim: dan is het lijstje
+niet meer geselecteerd. Je verandert dit met één regel in `config.yaml`.
 
 Twee kolommen in de Excel waren leeg: **Gaber** en **Mesjka**. Die staan op
 `actief: false` en krijgen dus nog geen matches. Zodra hun profiel er is, vul je
@@ -212,21 +224,24 @@ python -m pytest
 
 ### Circle8
 
-Circle8 draait achter de botbescherming van Vercel. Vanaf een datacenter-IP
-(zoals de GitHub-runner) kan dat een 403 opleveren. De scraper probeert daarom
-eerst een gewoon verzoek en daarna een echte browser (Chromium via Playwright),
-en leest vervolgens de JSON-LD-vacaturegegevens of anders de links op de pagina.
+Circle8 draait achter de botbescherming van Vercel. Een gewoon verzoek krijgt
+403 of 429 terug. In de run van 18 september 2026 kwam ook een echte browser
+(Chromium via Playwright) vanaf een GitHub-runner er niet doorheen.
 
-De browserstap is de traagste van de hele run; in `config.yaml` staat onder
-`platforms.circle8` een harde grens (`browser_laad_timeout_seconden`,
-`browser_selector_timeout_seconden`) en kun je hem met `gebruik_browser: false`
-helemaal overslaan.
+Die browserpoging staat daarom uit: hij kostte elke week een download van
+~190 MB en een halve minuut, zonder resultaat. De scraper doet nu alleen nog een
+gewoon verzoek en meldt het netjes in de platformstatus als dat mislukt. De rest
+van de alert gaat gewoon door.
 
-Lukt het niet, dan **staat dat met zoveel woorden in de platformstatus onderaan
-de mail** en gaat de rest gewoon door. Vanuit de ontwikkelomgeving waarin dit
-gebouwd is, bleef Circle8 geblokkeerd; of het vanaf GitHub wél lukt, blijkt bij
-de eerste echte run. Zo niet, dan is het alternatief om Circle8's eigen
-e-mailalert aan te zetten en die naar dit postvak te laten lopen.
+Wil je het opnieuw proberen, bijvoorbeeld omdat Circle8 zijn beveiliging heeft
+aangepast: zet `platforms.circle8.gebruik_browser` in `config.yaml` op `true`
+en zet de twee `playwright`-regels terug in
+[`.github/workflows/opdrachtalert.yml`](.github/workflows/opdrachtalert.yml)
+(ze staan daar als commentaar bij de installatiestap). De parser leest dan eerst
+de JSON-LD-vacaturegegevens en anders de links op de pagina.
+
+Blijft het mislukken, dan is het praktische alternatief om Circle8's eigen
+e-mailalert aan te zetten en die naar hetzelfde postvak te laten lopen.
 
 ### Flextender
 
