@@ -174,3 +174,44 @@ def test_freep_tarief_nul_is_geen_tarief():
 
     assert freep._tarief({"rate_min": 0, "rate_max": 0}) == ""
     assert freep._tarief({"rate_min": 0, "rate_max": 125}) == "max €125 p/u"
+
+
+def test_flextender_leest_de_publieke_kaart():
+    """Flextender komt van de openbare zoekresultaten, niet meer achter een inlog.
+
+    Inloggen op app.flextender.nl werkte niet: bij een afwijzing geeft
+    Flextender exact dezelfde loginpagina terug, zonder reden, en ook een echte
+    browser kwam er niet doorheen. De opdrachtenpagina van www.flextender.nl
+    levert dezelfde uitvragen publiek.
+    """
+    from opdrachtalert.scrapers import flextender
+
+    soep = BeautifulSoup(
+        (FIXTURES / "flextender_resultaten.html").read_text(encoding="utf-8"), "lxml"
+    )
+    uitvragen = [
+        u for u in (flextender._uit_kaart(k) for k in soep.select(".css-foundjob")) if u
+    ]
+    assert len(uitvragen) == 2
+
+    eerste = uitvragen[0]
+    assert eerste.platform == "Flextender"
+    assert eerste.titel == "Beleidsadviseur Ruimte"
+    assert eerste.opdrachtgever == "Gemeente De Ronde Venen"
+    assert eerste.locatie == "Utrecht"
+    assert eerste.uren_per_week == "36"
+    assert eerste.sluitingsdatum == "23-09-2026"
+    # De URL wijst naar de publieke detailpagina, op aanvraagnummer.
+    assert eerste.extern_id == "32543"
+    assert eerste.url == "https://app.flextender.nl/nologin/jobdetails/32543"
+
+
+def test_flextender_datum_en_uren():
+    from opdrachtalert.scrapers import flextender
+
+    assert flextender._nl_datum("23 september 2026 agenda") == "23-09-2026"
+    assert flextender._nl_datum("1 maart 2027") == "01-03-2027"
+    assert flextender._nl_datum("geen datum") == ""
+    assert flextender._uren("36 uur") == "36"
+    assert flextender._uren("16 - 24 uur") == "16-24"
+    assert flextender._uren("in overleg") is None

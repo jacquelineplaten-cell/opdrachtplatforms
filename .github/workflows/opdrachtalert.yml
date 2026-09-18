@@ -86,9 +86,6 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_FROM: ${{ secrets.MAIL_FROM || secrets.SMTP_USER }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-          FLEXTENDER_USERNAME: ${{ secrets.FLEXTENDER_USERNAME }}
-          FLEXTENDER_PASSWORD: ${{ secrets.FLEXTENDER_PASSWORD }}
-          FLEXTENDER_LIST_URL: ${{ secrets.FLEXTENDER_LIST_URL }}
         run: |
           argumenten=(--uitvoer out/alert.html)
           if [ "${{ inputs.droogloop }}" = "true" ]; then

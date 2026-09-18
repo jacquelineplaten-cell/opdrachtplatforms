@@ -17,7 +17,7 @@ mail stond.
 | **Ukomst** | WordPress REST API (`ukomst.nl/wp-json/wp/v2/jobs`) plus de detailpagina | Klein aanbod, sterk IT-gericht. Storingsberichten die Ukomst soms als opdracht publiceert, filteren we eruit. |
 | **Need Staffing** | HTML-lijst, 20 per pagina | Zonder inlog. |
 | **Circle8** | HTML | Komt er niet door: Circle8 staat achter de botbescherming van Vercel. Zie [Circle8](#circle8) hieronder. |
-| **Flextender** | Inloggen en daarna de aanvragenlijst | Werkt alleen met inloggegevens. Zie [Flextender](#flextender) hieronder. |
+| **Flextender** | Publieke zoekresultaten van `www.flextender.nl/opdrachten/` plus de openbare detailpagina op `app.flextender.nl/nologin/jobdetails/<aanvraagnummer>` | Ruim 200 uitvragen, geen inlog nodig. Hier staan ook veel opdrachten van minder dan 40 uur. |
 
 Staat dezelfde opdracht op meerdere platforms, dan zie je hem één keer, met
 "staat ook op ..." erbij.
@@ -146,8 +146,6 @@ Deze drie zijn genoeg om te starten. Optioneel:
 
 | Name | Waarvoor |
 | --- | --- |
-| `FLEXTENDER_USERNAME` en `FLEXTENDER_PASSWORD` | Zet Flextender aan. Zonder deze twee wordt dat platform overgeslagen en staat dat in de mail. |
-| `FLEXTENDER_LIST_URL` | De URL van je aanvragenlijst, als de alert hem zelf niet vindt. |
 | `MAIL_FROM` | Ander afzenderadres dan `SMTP_USER`. |
 | `SMTP_HOST` en `SMTP_PORT` | Alleen als je niet via Gmail verstuurt. |
 
@@ -251,11 +249,26 @@ e-mailalert aan te zetten en die naar hetzelfde postvak te laten lopen.
 
 ### Flextender
 
-Flextender vereist inlog en elke omgeving heeft een eigen inrichting. De scraper
-logt in op https://app.flextender.nl/ en zoekt daarna zelf de pagina met
-aanvragen. Vindt hij die niet, of wordt de lijst daar met JavaScript geladen,
-dan meldt hij dat in de mail. Zet in dat geval `FLEXTENDER_LIST_URL` op de URL
-die je zelf in je browser ziet als je bent ingelogd en naar je aanvragen kijkt.
+Flextender leek een inlog te vereisen, maar dat is niet zo. De opdrachtenpagina
+op www.flextender.nl haalt haar resultaten op bij WordPress:
+
+```
+POST https://www.flextender.nl/wp-admin/admin-ajax.php
+     action=kbs_flx_searchjobs  (+ het kbs_flx_widget_config-token uit het formulier)
+  -> {"resultHtml": "<alle openstaande opdrachten in één keer>"}
+```
+
+De paginering daar gebeurt in de browser, dus één verzoek levert de volledige
+lijst: ruim 200 uitvragen. Elke kaart noemt het aanvraagnummer, en daarmee is de
+hele omschrijving publiek op te halen via
+`app.flextender.nl/nologin/jobdetails/<aanvraagnummer>`.
+
+De eerdere versie logde in op app.flextender.nl en werd geweigerd. Dat viel niet
+te achterhalen: Flextender geeft bij een afgewezen inlog exact dezelfde
+loginpagina terug, zonder foutmelding, en ook een echte browser kwam er niet
+doorheen. Die route is vervallen. **De secrets `FLEXTENDER_USERNAME`,
+`FLEXTENDER_PASSWORD` en `FLEXTENDER_LIST_URL` zijn niet meer nodig en kun je
+verwijderen.**
 
 ## Wat de alert onthoudt
 

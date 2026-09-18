@@ -1,24 +1,28 @@
 """Flextender.
 
-Flextender is alleen met inlog te zien. Het inlogformulier op
-https://app.flextender.nl/ post drie velden terug naar dezelfde URL:
+Inloggen blijkt niet nodig. De openbare opdrachtenpagina op www.flextender.nl
+haalt haar resultaten op bij WordPress:
 
-    login[__config]   verborgen token dat per paginabezoek verschilt
-    login[username]   e-mailadres
-    login[password]   wachtwoord
+    POST https://www.flextender.nl/wp-admin/admin-ajax.php
+         action=kbs_flx_searchjobs  (+ kbs_flx_widget_config uit het formulier)
+    -> {"resultHtml": "<alle openstaande opdrachten in één keer>"}
 
-Na het inloggen zoeken we de pagina met openstaande aanvragen. Omdat elk
-Flextender-account een eigen inrichting heeft, is de lijstpagina in te stellen
-met FLEXTENDER_LIST_URL; staat die niet ingesteld, dan zoeken we hem zelf op in
-het menu. Zonder inloggegevens slaat deze scraper zichzelf netjes over.
+De paginering daar is client-side, dus één verzoek levert de volledige lijst.
+Elke kaart noemt het aanvraagnummer, en met dat nummer is de volledige
+omschrijving publiek op te halen:
+
+    GET https://app.flextender.nl/nologin/jobdetails/<aanvraagnummer>
+
+Eerder logde deze scraper in op app.flextender.nl. Dat werkte niet: bij een
+afgewezen inlog geeft Flextender exact dezelfde loginpagina terug, zonder reden,
+en ook een echte browser kwam er niet doorheen. Die route is vervallen; de
+FLEXTENDER_*-secrets zijn niet meer nodig.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 import re
-from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
@@ -27,148 +31,162 @@ from .base import Ophaler, tekst_uit_html
 
 log = logging.getLogger(__name__)
 
-BASIS = "https://app.flextender.nl/"
-MENU_WOORDEN = ("aanvraag", "aanvragen", "opdracht", "opdrachten", "vacature", "marktplaats")
-DETAIL_PATROON = re.compile(r"(aanvraag|opdracht|job|request)", re.IGNORECASE)
+ZOEKPAGINA = "https://www.flextender.nl/opdrachten/"
+AJAX = "https://www.flextender.nl/wp-admin/admin-ajax.php"
+DETAIL = "https://app.flextender.nl/nologin/jobdetails/{nummer}"
+ZOEKACTIE = "kbs_flx_searchjobs"
+
+AANVRAAGNUMMER = re.compile(r"aanvraagnr=(\d+)")
+MAANDEN = {
+    "januari": 1, "februari": 2, "maart": 3, "april": 4, "mei": 5, "juni": 6,
+    "juli": 7, "augustus": 8, "september": 9, "oktober": 10, "november": 11,
+    "december": 12,
+}
 
 
-def _inloggen(ophaler: Ophaler, gebruiker: str, wachtwoord: str) -> BeautifulSoup:
-    pagina = ophaler.soep(BASIS)
-    token_veld = pagina.find("input", attrs={"name": "login[__config]"})
-    if not token_veld:
-        raise RuntimeError("inlogformulier niet herkend (geen login[__config] gevonden)")
+def _zoekvelden(pagina: BeautifulSoup) -> dict[str, str]:
+    """De verborgen velden van het zoekformulier, inclusief het widget-token."""
+    for formulier in pagina.find_all("form"):
+        actie = formulier.find("input", attrs={"name": "action"})
+        if not actie or actie.get("value") != ZOEKACTIE:
+            continue
+        velden: dict[str, str] = {}
+        for veld in formulier.find_all("input"):
+            naam = veld.get("name")
+            soort = (veld.get("type") or "").lower()
+            # Vinkjes zijn filters; die laten we uit zodat we alles krijgen.
+            if not naam or soort == "checkbox":
+                continue
+            velden[naam] = veld.get("value") or ""
+        velden["kbs_flx_joblsrc_freetext"] = ""
+        return velden
+    raise RuntimeError("zoekformulier niet gevonden op de opdrachtenpagina")
 
-    formulier = {
-        "login[__config]": token_veld.get("value", ""),
-        "login[username]": gebruiker,
-        "login[password]": wachtwoord,
-    }
-    melding_veld = pagina.find("input", attrs={"name": "flxNotification[__config]"})
-    if melding_veld:
-        formulier["flxNotification[__config]"] = melding_veld.get("value", "")
 
-    antwoord = ophaler.sessie.post(
-        BASIS, data=formulier, timeout=ophaler.timeout, allow_redirects=True
+def _samenvatting(kaart) -> dict[str, str]:
+    """De labelrijtjes van een kaart als {label: waarde}."""
+    velden: dict[str, str] = {}
+    for rij in kaart.select(".css-summaryrow"):
+        label = rij.select_one(".css-caption")
+        waarde = rij.select_one(".css-value")
+        if not label or not waarde:
+            continue
+        sleutel = " ".join(label.get_text(" ").split()).lower()
+        tekst = " ".join(waarde.get_text(" ").split())
+        # Een kaart herhaalt sommige velden; de eerste is de samenvatting,
+        # de latere staan in het uitklapblok en zijn vaak vollediger.
+        if tekst and (sleutel not in velden or len(tekst) > len(velden[sleutel])):
+            velden[sleutel] = tekst
+    return velden
+
+
+def _nl_datum(waarde: str) -> str:
+    """'23 september 2026 agenda' -> '23-09-2026'."""
+    m = re.search(r"(\d{1,2})\s+([a-zé]+)\s+(\d{4})", waarde.lower())
+    if not m:
+        return ""
+    dag, maandnaam, jaar = m.groups()
+    maand = MAANDEN.get(maandnaam)
+    return f"{int(dag):02d}-{maand:02d}-{jaar}" if maand else ""
+
+
+def _uren(waarde: str) -> str | None:
+    m = re.search(r"(\d{1,2})(?:\s*-\s*(\d{1,2}))?", waarde)
+    if not m:
+        return None
+    return f"{m.group(1)}-{m.group(2)}" if m.group(2) else m.group(1)
+
+
+def _uit_kaart(kaart) -> Uitvraag | None:
+    titel_el = kaart.select_one(".css-jobtitle")
+    if not titel_el:
+        return None
+    titel = " ".join(titel_el.get_text(" ").split())
+    if not titel:
+        return None
+
+    link = kaart.get("data-kbslinkurl") or ""
+    nummer_match = AANVRAAGNUMMER.search(link)
+    velden = _samenvatting(kaart)
+    nummer = nummer_match.group(1) if nummer_match else velden.get("aanvraagnummer", "")
+    if not nummer:
+        return None
+
+    klant_el = kaart.select_one(".css-customer")
+    return Uitvraag(
+        platform="Flextender",
+        titel=titel,
+        url=DETAIL.format(nummer=nummer),
+        opdrachtgever=" ".join(klant_el.get_text(" ").split()) if klant_el else "",
+        locatie=velden.get("regio", ""),
+        uren_per_week=_uren(velden.get("uren per week", "")),
+        startdatum=velden.get("start", ""),
+        sluitingsdatum=_nl_datum(velden.get("einde inschrijfdatum", "")),
+        segment=velden.get("duur", ""),
+        extern_id=nummer,
     )
-    antwoord.raise_for_status()
-    na_inlog = BeautifulSoup(antwoord.text, "lxml")
-    if na_inlog.find("input", attrs={"name": "login[password]"}):
-        # Flextender toont bij een afwijzing geen foutmelding: je krijgt exact
-        # dezelfde loginpagina terug. We kunnen dus niet zien wat er mis is en
-        # noemen daarom de twee oorzaken die het in de praktijk zijn.
-        raise RuntimeError(
-            "inloggen geweigerd (Flextender geeft geen reden). Controleer "
-            "FLEXTENDER_USERNAME en FLEXTENDER_PASSWORD, en of je account met "
-            "e-mailadres en wachtwoord werkt: gaat je inlog via 'Log in met uw "
-            "Microsoft account', dan werkt dit formulier niet"
-        )
-    return na_inlog
 
 
-def _zoek_lijstpagina(ophaler: Ophaler, na_inlog: BeautifulSoup) -> str | None:
-    for anker in na_inlog.find_all("a", href=True):
-        label = " ".join(anker.get_text(" ").split()).lower()
-        href = anker["href"]
-        if any(woord in label for woord in MENU_WOORDEN) or any(
-            woord in href.lower() for woord in MENU_WOORDEN
-        ):
-            return urljoin(BASIS, href)
-    return None
-
-
-def _uit_tabel(soep: BeautifulSoup, bron_url: str) -> list[Uitvraag]:
-    uitvragen: dict[str, Uitvraag] = {}
-    for anker in soep.find_all("a", href=True):
-        href = anker["href"]
-        if not DETAIL_PATROON.search(href):
-            continue
-        titel = " ".join(anker.get_text(" ").split())
-        if len(titel) < 5:
-            continue
-        url = urljoin(bron_url, href)
-        if url in uitvragen:
-            continue
-
-        rij = anker.find_parent("tr")
-        context = " ".join(rij.get_text(" ").split()) if rij else titel
-        uitvragen[url] = Uitvraag(
-            platform="Flextender",
-            titel=titel,
-            url=url,
-            omschrijving=context,
-            extern_id=url,
-        )
-    return list(uitvragen.values())
-
-
-def haal_op(ophaler: Ophaler, **_: object) -> list[PlatformResultaat]:
-    gebruiker = os.environ.get("FLEXTENDER_USERNAME", "").strip()
-    wachtwoord = os.environ.get("FLEXTENDER_PASSWORD", "").strip()
-    if not gebruiker or not wachtwoord:
-        return [
-            PlatformResultaat(
-                platform="Flextender",
-                gelukt=False,
-                melding=(
-                    "overgeslagen: geen inloggegevens ingesteld "
-                    "(secrets FLEXTENDER_USERNAME en FLEXTENDER_PASSWORD)"
-                ),
-            )
-        ]
-
+def haal_op(
+    ophaler: Ophaler,
+    voorselectie=None,
+    max_details: int = 300,
+    **_: object,
+) -> list[PlatformResultaat]:
     try:
-        na_inlog = _inloggen(ophaler, gebruiker, wachtwoord)
+        pagina = ophaler.soep(ZOEKPAGINA)
+        velden = _zoekvelden(pagina)
+        # Het zoekformulier gaat als multipart de deur uit (FormData in de browser).
+        antwoord = ophaler.sessie.post(
+            AJAX,
+            files={naam: (None, waarde) for naam, waarde in velden.items()},
+            timeout=ophaler.timeout,
+        )
+        antwoord.raise_for_status()
+        resultaat_html = (antwoord.json() or {}).get("resultHtml", "")
     except Exception as exc:  # noqa: BLE001
+        melding = f"{type(exc).__name__}: {exc}"
+        log.warning("Flextender ophalen mislukt: %s", melding)
+        return [PlatformResultaat(platform="Flextender", gelukt=False, melding=melding)]
+
+    if not resultaat_html:
         return [
             PlatformResultaat(
-                platform="Flextender", gelukt=False, melding=f"{type(exc).__name__}: {exc}"
+                platform="Flextender", gelukt=False, melding="lege zoekresultaten ontvangen"
             )
         ]
 
-    lijst_url = os.environ.get("FLEXTENDER_LIST_URL", "").strip() or _zoek_lijstpagina(
-        ophaler, na_inlog
-    )
-    if not lijst_url:
-        return [
-            PlatformResultaat(
-                platform="Flextender",
-                gelukt=False,
-                melding=(
-                    "ingelogd, maar de pagina met aanvragen niet gevonden. "
-                    "Zet FLEXTENDER_LIST_URL op de URL die je na inloggen ziet."
-                ),
-            )
-        ]
+    soep = BeautifulSoup(resultaat_html, "lxml")
+    gevonden: dict[str, Uitvraag] = {}
+    for kaart in soep.select(".css-foundjob"):
+        uitvraag = _uit_kaart(kaart)
+        if uitvraag:
+            gevonden.setdefault(uitvraag.extern_id, uitvraag)
 
-    try:
-        soep = ophaler.soep(lijst_url)
-    except Exception as exc:  # noqa: BLE001
+    if not gevonden:
         return [
             PlatformResultaat(
                 platform="Flextender",
                 gelukt=False,
-                melding=f"lijstpagina {lijst_url} niet opgehaald: {type(exc).__name__}: {exc}",
+                melding="resultaten ontvangen maar geen opdrachten herkend (opmaak gewijzigd?)",
             )
         ]
 
-    uitvragen = _uit_tabel(soep, lijst_url)
-    if not uitvragen:
-        return [
-            PlatformResultaat(
-                platform="Flextender",
-                gelukt=False,
-                melding=(
-                    f"ingelogd op {lijst_url}, maar geen aanvragen herkend. "
-                    "De lijst wordt daar mogelijk met JavaScript geladen; "
-                    "zet FLEXTENDER_LIST_URL op de juiste pagina."
-                ),
-            )
-        ]
+    uitvragen = list(gevonden.values())
+    kandidaten = uitvragen if voorselectie is None else [u for u in uitvragen if voorselectie(u)]
 
-    for uitvraag in uitvragen:
+    opgehaald, mislukt, eerste_fout = 0, 0, ""
+    for uitvraag in kandidaten[:max_details]:
         try:
             uitvraag.omschrijving = tekst_uit_html(ophaler.haal(uitvraag.url).text)
+            opgehaald += 1
         except Exception as exc:  # noqa: BLE001
+            mislukt += 1
+            if not eerste_fout:
+                eerste_fout = f"{type(exc).__name__}: {exc}"
             log.debug("Flextender detail mislukt voor %s: %s", uitvraag.url, exc)
 
-    return [PlatformResultaat(platform="Flextender", uitvragen=uitvragen)]
+    melding = f"{opgehaald} omschrijvingen opgehaald"
+    if mislukt:
+        melding += f", {mislukt} mislukt ({eerste_fout})"
+    return [PlatformResultaat(platform="Flextender", uitvragen=uitvragen, melding=melding)]

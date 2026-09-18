@@ -194,7 +194,7 @@ platforms:
     gebruik_browser: false
     browser_laad_timeout_seconden: 60
     browser_selector_timeout_seconden: 20
-  flextender:    {actief: true}    # werkt alleen met FLEXTENDER_* secrets
+  flextender:    {actief: true}    # publieke opdrachtenpagina, geen inlog nodig
 
 ophalen:
   timeout_seconden: 45
