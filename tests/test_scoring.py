@@ -207,3 +207,20 @@ def test_geheugen_overleeft_een_kapot_bestand(tmp_path):
     geheugen = Geheugen(pad)
     assert geheugen.is_nieuw("abc")
     assert not geheugen.al_verstuurd_deze_week(date(2026, 9, 18))
+
+
+def test_poort_blijft_bijten_als_de_drempel_zakt(instellingen, profielen):
+    """Een cap op of boven de drempel zou de innovatiepoort betekenisloos maken."""
+    u = uitvraag(
+        "Projectleider vervanging riolering",
+        "Gemeente Elburg",
+        "Je stuurt de aannemer aan, bewaakt de planning en het budget.",
+    )
+    for drempel in (5, 6, 7, 8):
+        aangepast = dict(
+            instellingen,
+            drempel=drempel,
+            innovatie_poort=dict(instellingen["innovatie_poort"], cap_zonder_signaal=9),
+        )
+        score = beoordeel(u, profielen["Mysia"], aangepast).score
+        assert score < drempel, f"drempel {drempel}: poort liet {score} door"

@@ -164,7 +164,12 @@ def beoordeel(
     if poort.get("actief") and not volle_boost:
         sterk = gevonden_termen(volledig, poort.get("sterke_termen", []))
         if not sterk:
-            cap = int(poort.get("cap_zonder_signaal", 6))
+            # Een cap op of boven de drempel zou de poort betekenisloos maken:
+            # de uitvraag komt dan alsnog in de mail. Daarom hier begrensd.
+            cap = min(
+                int(poort.get("cap_zonder_signaal", 6)),
+                int(instellingen["drempel"]) - 1,
+            )
             if score > cap:
                 score = cap
                 redenen.append("geen vernieuwingssignaal in de uitvraag")

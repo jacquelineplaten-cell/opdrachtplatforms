@@ -41,8 +41,8 @@ dezelfde generieke klus bij iedereen in de mail komt. Expertise is wél
 onderscheidend en weegt daarom het zwaarst.
 
 Daarbovenop staat de **innovatiepoort**: past de functietitel en de sector wel,
-maar gaat de uitvraag nergens over vernieuwen, dan blijft de score op 6 steken
-en haalt hij de drempel niet. Dat voorkomt dat iedere "projectleider bij een
+maar gaat de uitvraag nergens over vernieuwen, dan blijft de score net onder de
+drempel steken en haalt hij de mail niet. Dat voorkomt dat iedere "projectleider bij een
 gemeente" bovenaan komt. Een persoonlijke boost omzeilt die poort. Uitzetten kan
 met `innovatie_poort.actief: false` in `config.yaml`.
 
@@ -57,7 +57,7 @@ Bijna alles wat je wilt bijstellen, zit in twee bestanden:
   `expertise`, `uitsluiten` en `boost`. Krijgt iemand te veel ruis? Haal een
   trefwoord weg. Mist iemand iets? Voeg het toe. Iemand even niet beschikbaar?
   Zet `actief: false`.
-- **[`config.yaml`](config.yaml)** – de drempel (`drempel: 7`), het maximum
+- **[`config.yaml`](config.yaml)** – de drempel (`drempel: 6`), het maximum
   aantal uitvragen per persoon, de gewichten, de innovatiepoort en welke
   platforms aanstaan.
 
@@ -67,12 +67,18 @@ Die drempel is de grootste knop. Gemeten op het aanbod van 18 september 2026
 | Drempel | Matches | Teamleden met een match |
 | --- | --- | --- |
 | 7 | 22 | 4 van de 10 |
-| 6 | 69 | 10 van de 10 |
-| 5 | 116 | 10 van de 10, bijna allemaal tegen het maximum van 12 aan |
+| 6 (ingesteld) | 65 | 9 van de 10 |
+| 5 | 111 | 10 van de 10, de meesten tegen het maximum van 12 aan |
 
-Zeven houdt het scherp maar laat in een magere week mensen leeg; zes vult ieders
-lijstje maar levert meer twijfelgevallen. Vijf is te ruim: dan is het lijstje
-niet meer geselecteerd. Je verandert dit met één regel in `config.yaml`.
+Zeven houdt het scherp maar laat in een magere week de meeste mensen leeg; zes
+vult vrijwel ieders lijstje en levert wat meer twijfelgevallen. Vijf is te ruim:
+dan is het lijstje niet meer geselecteerd. Je verandert dit met één regel in
+`config.yaml`.
+
+Verlaag je de drempel, kijk dan ook even naar `innovatie_poort.cap_zonder_signaal`:
+die moet eronder liggen, anders komt een uitvraag zonder vernieuwingssignaal er
+alsnog door. De code verlaagt hem zo nodig automatisch tot `drempel - 1`, dus
+stukgaan kan het niet.
 
 Twee kolommen in de Excel waren leeg: **Gaber** en **Mesjka**. Die staan op
 `actief: false` en krijgen dus nog geen matches. Zodra hun profiel er is, vul je
