@@ -79,30 +79,96 @@ uit de antwoorden, niet blind overgenomen.
 
 ## Instellen in GitHub
 
-Zet deze secrets onder **Settings → Secrets and variables → Actions**:
+Drie stappen: een app-wachtwoord bij Google maken, drie secrets in GitHub zetten,
+en één testrun draaien. Reken op een kwartier.
 
-| Secret | Nodig? | Waarde |
-| --- | --- | --- |
-| `SMTP_USER` | ja | Het Gmail-adres waarmee verstuurd wordt. |
-| `SMTP_PASSWORD` | ja | Een Google **app-wachtwoord**, niet je gewone wachtwoord. Aanmaken op https://myaccount.google.com/apppasswords (tweestapsverificatie moet aanstaan). |
-| `MAIL_TO` | ja | De ontvanger(s), komma's ertussen voor meerdere. |
-| `MAIL_FROM` | nee | Afzenderadres; standaard hetzelfde als `SMTP_USER`. |
-| `SMTP_HOST` / `SMTP_PORT` | nee | Alleen als je niet via Gmail wilt versturen. Standaard `smtp.gmail.com` en `587`. |
-| `FLEXTENDER_USERNAME` | nee | Je Flextender-inlog. Zonder dit wordt Flextender overgeslagen. |
-| `FLEXTENDER_PASSWORD` | nee | Bijbehorend wachtwoord. |
-| `FLEXTENDER_LIST_URL` | nee | De URL van de aanvragenlijst die je na inloggen ziet. Zie hieronder. |
+### Stap 1 — Maak een Google app-wachtwoord
 
-De workflow [`.github/workflows/opdrachtalert.yml`](.github/workflows/opdrachtalert.yml)
-draait elke vrijdag rond 07:00 Nederlandse tijd. GitHub plant op UTC, dus er
-staan twee tijden in (05:00 en 06:00 UTC) — de ene klopt in de zomertijd, de
-andere in de wintertijd. GitHub kan een geplande run bovendien tot een uur
-uitstellen, dus de workflow hanteert een ruim venster (vrijdag tussen 06:00 en
-11:00 lokaal) en bewaakt de alert zélf dat er per week maar één mail uitgaat:
-staat er in `state/gezien.json` al een verzending in deze ISO-week, dan stopt hij.
-Met `--forceer` verstuur je alsnog.
+Gmail accepteert je gewone wachtwoord niet voor SMTP. Je hebt een app-wachtwoord
+nodig: een code van 16 tekens die alleen voor deze alert geldt en die je later
+weer kunt intrekken zonder je eigen wachtwoord te wijzigen.
 
-Je kunt hem ook met de hand starten via **Actions → Wekelijkse opdrachtalert →
-Run workflow**, eventueel als droogloop of met een andere drempel.
+1. Ga naar https://myaccount.google.com/security en zet **Tweestapsverificatie**
+   aan als dat nog niet zo is. Zonder tweestapsverificatie bestaat de optie voor
+   app-wachtwoorden niet.
+2. Ga daarna naar https://myaccount.google.com/apppasswords.
+3. Typ bij de naam iets als `Opdrachtalert` en klik op **Maken**.
+4. Google toont een code van 16 tekens in vier groepjes, bijvoorbeeld
+   `abcd efgh ijkl mnop`. **Kopieer die nu meteen**, je krijgt hem daarna niet
+   meer te zien.
+5. Haal de spaties eruit: je gebruikt `abcdefghijklmnop`.
+
+### Stap 2 — Zet de secrets in GitHub
+
+Ga naar
+https://github.com/jacquelineplaten-cell/opdrachtplatforms/settings/secrets/actions
+
+Zie je die pagina niet, dan zit je op het verkeerde tabblad: het is
+**Settings** (tandwiel bovenin de repository, niet je persoonlijke instellingen)
+→ in het linkermenu **Secrets and variables** → **Actions**.
+
+Klik op de groene knop **New repository secret** en vul in:
+
+| Name | Secret |
+| --- | --- |
+| `SMTP_USER` | je Gmail-adres, bijvoorbeeld `jacquelineplaten@gmail.com` |
+
+Klik op **Add secret**. Herhaal dat voor de andere twee:
+
+| Name | Secret |
+| --- | --- |
+| `SMTP_PASSWORD` | het app-wachtwoord van 16 tekens uit stap 1, zonder spaties |
+| `MAIL_TO` | het adres waar de alert naartoe moet. Meerdere adressen scheid je met een komma. |
+
+De namen zijn hoofdlettergevoelig en moeten exact zo geschreven worden. Na het
+opslaan kun je een secret niet meer teruglezen, alleen overschrijven; dat is
+normaal.
+
+Deze drie zijn genoeg om te starten. Optioneel:
+
+| Name | Waarvoor |
+| --- | --- |
+| `FLEXTENDER_USERNAME` en `FLEXTENDER_PASSWORD` | Zet Flextender aan. Zonder deze twee wordt dat platform overgeslagen en staat dat in de mail. |
+| `FLEXTENDER_LIST_URL` | De URL van je aanvragenlijst, als de alert hem zelf niet vindt. |
+| `MAIL_FROM` | Ander afzenderadres dan `SMTP_USER`. |
+| `SMTP_HOST` en `SMTP_PORT` | Alleen als je niet via Gmail verstuurt. |
+
+### Stap 3 — Draai een testrun
+
+1. Klik bovenin de repository op het tabblad **Actions**.
+2. Klik in het linkermenu op **Wekelijkse opdrachtalert**.
+3. Rechts verschijnt de knop **Run workflow**. Klik die aan, vink
+   **Alleen tonen wat er verstuurd zou worden, niet mailen** aan en klik op de
+   groene **Run workflow**.
+4. Na een minuut verschijnt er een regel in de lijst. Klik erop en daarna op
+   **alert**, en open de stap **Alert draaien**. Daar zie je precies welke
+   uitvragen er gevonden zijn en onderaan de platformstatus. Er is nog geen mail
+   verstuurd.
+5. Klopt het beeld? Draai dan hetzelfde nog een keer, maar dan **zonder** het
+   vinkje. Nu komt de mail binnen.
+
+Krijg je bij die tweede run de melding *"Deze week is al een alert verstuurd"*,
+dan is de wekelijkse bescherming aan het werk. Vink dan ook
+**Ook versturen als er deze week al een alert uitging** aan.
+
+Daarna draait hij vanzelf elke vrijdag; je hoeft niets meer te doen.
+
+### Waarom je niets hoeft te mergen
+
+`claude/festive-clarke-m0ojlz` is op dit moment de **default branch** van de
+repository. Geplande workflows draaien alleen vanaf de default branch, dus de
+vrijdagmail werkt zoals het nu staat. Maak je later een `main` en maak je die
+de default, verplaats deze bestanden dan mee — anders valt de alert stil.
+
+### Over de planning
+
+De workflow draait elke vrijdag rond 07:00 Nederlandse tijd. GitHub plant op
+UTC, dus er staan twee tijden in (05:00 en 06:00 UTC) — de ene klopt in de
+zomertijd, de andere in de wintertijd. GitHub kan een geplande run bovendien tot
+een uur uitstellen, dus de workflow hanteert een ruim venster (vrijdag tussen
+06:00 en 11:00 lokaal) en bewaakt de alert zélf dat er per week maar één mail
+uitgaat: staat er in `state/gezien.json` al een verzending in deze ISO-week, dan
+stopt hij.
 
 ## Lokaal draaien
 

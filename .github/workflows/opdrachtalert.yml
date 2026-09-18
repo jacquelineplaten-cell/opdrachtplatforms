@@ -18,6 +18,10 @@ on:
         description: "Afwijkende drempelscore (1-10)"
         type: string
         default: ""
+      forceer:
+        description: "Ook versturen als er deze week al een alert uitging"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -86,6 +90,9 @@ jobs:
           fi
           if [ -n "${{ inputs.drempel }}" ]; then
             argumenten+=(--drempel "${{ inputs.drempel }}")
+          fi
+          if [ "${{ inputs.forceer }}" = "true" ]; then
+            argumenten+=(--forceer)
           fi
           python -m opdrachtalert.main "${argumenten[@]}"
 
