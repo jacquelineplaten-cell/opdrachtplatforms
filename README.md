@@ -61,8 +61,8 @@ Bijna alles wat je wilt bijstellen, zit in twee bestanden:
   aantal uitvragen per persoon, de gewichten, de innovatiepoort en welke
   platforms aanstaan.
 
-Die drempel is de grootste knop. Gemeten op het aanbod van 18 september 2026
-(523 uitvragen):
+Die drempel is de grootste knop. Gemeten op het aanbod van 18 september 2026,
+vóórdat Flextender erbij kwam (523 uitvragen):
 
 | Drempel | Matches | Teamleden met een match |
 | --- | --- | --- |
@@ -74,6 +74,10 @@ Zeven houdt het scherp maar laat in een magere week de meeste mensen leeg; zes
 vult vrijwel ieders lijstje en levert wat meer twijfelgevallen. Vijf is te ruim:
 dan is het lijstje niet meer geselecteerd. Je verandert dit met één regel in
 `config.yaml`.
+
+Met Flextender erbij (558 uitvragen na samenvoegen van dubbelen) levert drempel
+6 er 88 op, verdeeld over alle tien de teamleden. Loopt iemand daardoor tegen
+het maximum van twaalf per persoon aan, verhoog dan `max_per_persoon`.
 
 Verlaag je de drempel, kijk dan ook even naar `innovatie_poort.cap_zonder_signaal`:
 die moet eronder liggen, anders komt een uitvraag zonder vernieuwingssignaal er

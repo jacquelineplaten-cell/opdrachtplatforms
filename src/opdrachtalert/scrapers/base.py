@@ -81,6 +81,25 @@ def parse_datum(waarde: Optional[str]) -> Optional[date]:
         return None
 
 
+def kies_details(kandidaten: list, max_details: int) -> tuple[list, str]:
+    """De uitvragen waarvan we de omschrijving ophalen, plus een waarschuwing.
+
+    De bovengrens is er om te voorkomen dat een platform met plotseling veel
+    aanbod de run laat vastlopen. Kapt hij af, dan moet dat in de mail komen te
+    staan: anders scoren de weggelaten uitvragen stilletjes op alleen hun titel.
+    """
+    if max_details <= 0:
+        return [], ""
+    if len(kandidaten) <= max_details:
+        return kandidaten, ""
+    weggelaten = len(kandidaten) - max_details
+    return (
+        kandidaten[:max_details],
+        f"LET OP: {weggelaten} uitvragen zonder omschrijving beoordeeld "
+        f"(bovengrens {max_details} bereikt, zie max_details_per_platform)",
+    )
+
+
 def uren_tekst(minimum: object, maximum: object) -> Optional[str]:
     """'32' of '16-24' uit een min/max-paar, of None als er niets bruikbaars is."""
     def getal(x: object) -> Optional[int]:

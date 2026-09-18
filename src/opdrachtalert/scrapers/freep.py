@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 
 from ..models import PlatformResultaat, Uitvraag
-from .base import Ophaler, parse_datum, tekst_uit_html
+from .base import Ophaler, kies_details, parse_datum, tekst_uit_html
 
 log = logging.getLogger(__name__)
 
@@ -100,9 +100,10 @@ def haal_op(
 
     uitvragen = [_naar_uitvraag(r) for r in data if isinstance(r, dict)]
     kandidaten = uitvragen if voorselectie is None else [u for u in uitvragen if voorselectie(u)]
+    kandidaten, afgekapt = kies_details(kandidaten, max_details)
 
     opgehaald, mislukt, eerste_fout = 0, 0, ""
-    for uitvraag in kandidaten[:max_details]:
+    for uitvraag in kandidaten:
         slug = uitvraag.url.rsplit("/", 1)[-1]
         try:
             detail = ophaler.json(DETAIL.format(slug=slug))
@@ -120,4 +121,6 @@ def haal_op(
     melding = f"{opgehaald} omschrijvingen opgehaald"
     if mislukt:
         melding += f", {mislukt} mislukt ({eerste_fout})"
+    if afgekapt:
+        melding += f"; {afgekapt}"
     return [PlatformResultaat(platform="Freep", uitvragen=uitvragen, melding=melding)]

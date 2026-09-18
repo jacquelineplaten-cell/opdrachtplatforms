@@ -215,3 +215,19 @@ def test_flextender_datum_en_uren():
     assert flextender._uren("36 uur") == "36"
     assert flextender._uren("16 - 24 uur") == "16-24"
     assert flextender._uren("in overleg") is None
+
+
+def test_bovengrens_op_detailpaginas_wordt_gemeld():
+    """Afkappen mag niet stil gebeuren: dan scoren uitvragen op alleen hun titel."""
+    from opdrachtalert.scrapers.base import kies_details
+
+    selectie, waarschuwing = kies_details(list(range(10)), 100)
+    assert selectie == list(range(10))
+    assert waarschuwing == ""
+
+    selectie, waarschuwing = kies_details(list(range(10)), 4)
+    assert selectie == [0, 1, 2, 3]
+    assert "6 uitvragen zonder omschrijving" in waarschuwing
+    assert "max_details_per_platform" in waarschuwing
+
+    assert kies_details(list(range(10)), 0) == ([], "")

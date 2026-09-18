@@ -203,6 +203,6 @@ ophalen:
   # (zie voorselectie_marge) houdt het aantal normaal ruim hieronder; deze grens
   # is er alleen om te voorkomen dat een platform met plotseling veel aanbod de
   # hele run laat vastlopen.
-  max_details_per_platform: 300
+  max_details_per_platform: 600
   # Uitvragen ouder dan dit aantal dagen worden overgeslagen.
   max_leeftijd_dagen: 30

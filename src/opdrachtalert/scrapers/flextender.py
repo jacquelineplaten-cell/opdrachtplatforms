@@ -27,7 +27,7 @@ import re
 from bs4 import BeautifulSoup
 
 from ..models import PlatformResultaat, Uitvraag
-from .base import Ophaler, tekst_uit_html
+from .base import Ophaler, kies_details, tekst_uit_html
 
 log = logging.getLogger(__name__)
 
@@ -174,9 +174,10 @@ def haal_op(
 
     uitvragen = list(gevonden.values())
     kandidaten = uitvragen if voorselectie is None else [u for u in uitvragen if voorselectie(u)]
+    kandidaten, afgekapt = kies_details(kandidaten, max_details)
 
     opgehaald, mislukt, eerste_fout = 0, 0, ""
-    for uitvraag in kandidaten[:max_details]:
+    for uitvraag in kandidaten:
         try:
             uitvraag.omschrijving = tekst_uit_html(ophaler.haal(uitvraag.url).text)
             opgehaald += 1
@@ -189,4 +190,6 @@ def haal_op(
     melding = f"{opgehaald} omschrijvingen opgehaald"
     if mislukt:
         melding += f", {mislukt} mislukt ({eerste_fout})"
+    if afgekapt:
+        melding += f"; {afgekapt}"
     return [PlatformResultaat(platform="Flextender", uitvragen=uitvragen, melding=melding)]
