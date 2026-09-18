@@ -103,13 +103,18 @@ def haal_op(
 
     regels = list(uitvragen.values())
     kandidaten = regels if voorselectie is None else [u for u in regels if voorselectie(u)]
-    mislukt = 0
+    opgehaald, mislukt, eerste_fout = 0, 0, ""
     for uitvraag in kandidaten[:max_details]:
         try:
             uitvraag.omschrijving = tekst_uit_html(ophaler.haal(uitvraag.url).text)
+            opgehaald += 1
         except Exception as exc:  # noqa: BLE001
             mislukt += 1
+            if not eerste_fout:
+                eerste_fout = f"{type(exc).__name__}: {exc}"
             log.debug("Need Staffing detail mislukt voor %s: %s", uitvraag.url, exc)
 
-    melding = fout or (f"{mislukt} detailpagina's mislukt" if mislukt else "")
+    melding = fout or f"{opgehaald} omschrijvingen opgehaald"
+    if mislukt:
+        melding += f", {mislukt} mislukt ({eerste_fout})"
     return [PlatformResultaat(platform="Need Staffing", uitvragen=regels, melding=melding)]

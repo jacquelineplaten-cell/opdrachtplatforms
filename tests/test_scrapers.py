@@ -132,3 +132,45 @@ def test_dedup_voegt_hetzelfde_over_platforms_samen():
     samengevoegd = next(u for u in resultaat if "prioriteren" in u.titel.lower())
     assert samengevoegd.platform == "Striive"  # de rijkste versie blijft staan
     assert samengevoegd.ook_op == ["Freep"]
+
+
+def test_freep_detail_vult_de_omschrijving_aan():
+    """De omschrijving komt van api.freep.nl, niet van de website.
+
+    www.freep.nl weigert verzoeken vanaf datacenter-IP's; in GitHub Actions
+    mislukten daardoor alle 112 detailpagina's en bleef de scoring steken op
+    alleen de titel.
+    """
+    from opdrachtalert.scrapers import freep
+
+    uitvraag = freep._naar_uitvraag(
+        {"slug": "ucc-specialist-1", "title": "Ucc specialist", "hours": 32}
+    )
+    assert uitvraag.omschrijving == ""
+
+    freep._vul_aan(
+        uitvraag,
+        {
+            "content": "<p><strong>Opdrachtomschrijving</strong><br />Je werkt aan innovatie.</p>",
+            "start_date": "2026-10-30",
+            "closing_date": "2026-09-23T12:00:00+02:00",
+            "location_name": "Den Haag",
+            "rate_min": 90,
+            "rate_max": 110,
+        },
+    )
+    assert uitvraag.omschrijving == "Opdrachtomschrijving Je werkt aan innovatie."
+    assert uitvraag.startdatum == "30-10-2026"
+    assert uitvraag.sluitingsdatum == "23-09-2026"
+    assert uitvraag.locatie == "Den Haag"
+    assert uitvraag.tarief == "€90-110 p/u"
+    # De detail-URL loopt over de API-host, de link in de mail naar de website.
+    assert freep.DETAIL.startswith("https://api.freep.nl/")
+    assert uitvraag.url.startswith("https://www.freep.nl/")
+
+
+def test_freep_tarief_nul_is_geen_tarief():
+    from opdrachtalert.scrapers import freep
+
+    assert freep._tarief({"rate_min": 0, "rate_max": 0}) == ""
+    assert freep._tarief({"rate_min": 0, "rate_max": 125}) == "max €125 p/u"

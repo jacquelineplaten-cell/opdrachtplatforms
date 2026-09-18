@@ -67,8 +67,14 @@ jobs:
         if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt playwright
-          python -m playwright install --with-deps chromium
+          pip install -r requirements.txt
+          # Playwright staat hier bewust niet bij. Het is alleen nodig voor de
+          # browserpoging van Circle8, en die komt ook met een echte browser
+          # niet door de botbescherming heen vanaf een GitHub-runner. Zet je
+          # platforms.circle8.gebruik_browser in config.yaml weer op true, voeg
+          # dan deze twee regels toe:
+          #   pip install playwright
+          #   python -m playwright install --with-deps chromium
 
       - name: Alert draaien
         if: github.event_name != 'schedule' || steps.tijd.outputs.doorgaan == 'ja'

@@ -53,7 +53,15 @@ def _inloggen(ophaler: Ophaler, gebruiker: str, wachtwoord: str) -> BeautifulSou
     antwoord.raise_for_status()
     na_inlog = BeautifulSoup(antwoord.text, "lxml")
     if na_inlog.find("input", attrs={"name": "login[password]"}):
-        raise RuntimeError("inloggen geweigerd: controleer FLEXTENDER_USERNAME/PASSWORD")
+        # Flextender toont bij een afwijzing geen foutmelding: je krijgt exact
+        # dezelfde loginpagina terug. We kunnen dus niet zien wat er mis is en
+        # noemen daarom de twee oorzaken die het in de praktijk zijn.
+        raise RuntimeError(
+            "inloggen geweigerd (Flextender geeft geen reden). Controleer "
+            "FLEXTENDER_USERNAME en FLEXTENDER_PASSWORD, en of je account met "
+            "e-mailadres en wachtwoord werkt: gaat je inlog via 'Log in met uw "
+            "Microsoft account', dan werkt dit formulier niet"
+        )
     return na_inlog
 
 

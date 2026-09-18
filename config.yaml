@@ -181,10 +181,15 @@ platforms:
   needstaffing:  {actief: true}
   circle8:
     actief: true
-    # Circle8 staat achter botbescherming; lukt een gewoon verzoek niet, dan
-    # proberen we een echte browser. Die stap is de traagste van de hele run,
-    # dus staat er een harde grens op. Op false zetten slaat de browser over.
-    gebruik_browser: true
+    # Circle8 staat achter de botbescherming van Vercel. Een gewoon verzoek
+    # krijgt 403, en in de run van 18-09-2026 kwam ook een echte browser vanaf
+    # een GitHub-runner er niet doorheen. Die browserpoging kost elke week een
+    # download van ~190 MB en een halve minuut, dus staat hij uit.
+    #
+    # Wil je het opnieuw proberen (bijvoorbeeld omdat Circle8 zijn beveiliging
+    # heeft aangepast), zet dan gebruik_browser op true én zet de stap
+    # "Playwright installeren" terug in .github/workflows/opdrachtalert.yml.
+    gebruik_browser: false
     browser_laad_timeout_seconden: 60
     browser_selector_timeout_seconden: 20
   flextender:    {actief: true}    # werkt alleen met FLEXTENDER_* secrets

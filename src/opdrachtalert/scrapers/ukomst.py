@@ -74,21 +74,24 @@ def haal_op(ophaler: Ophaler, max_details: int = 120, **_: object) -> list[Platf
     schoon = [u for u in uitvragen if u.titel and not _is_ruis(u.titel)]
     overgeslagen = len(uitvragen) - len(schoon)
 
-    mislukt = 0
+    opgehaald, mislukt, eerste_fout = 0, 0, ""
     for uitvraag in schoon[:max_details]:
         if uitvraag.omschrijving or not uitvraag.url:
             continue
         try:
             uitvraag.omschrijving = tekst_uit_html(ophaler.haal(uitvraag.url).text)
+            opgehaald += 1
         except Exception as exc:  # noqa: BLE001
             mislukt += 1
+            if not eerste_fout:
+                eerste_fout = f"{type(exc).__name__}: {exc}"
             log.debug("Ukomst detail mislukt voor %s: %s", uitvraag.url, exc)
 
-    notities = []
+    notities = [f"{opgehaald} omschrijvingen opgehaald"]
     if overgeslagen:
         notities.append(f"{overgeslagen} storingsbericht(en) overgeslagen")
     if mislukt:
-        notities.append(f"{mislukt} detailpagina's mislukt")
+        notities.append(f"{mislukt} mislukt ({eerste_fout})")
     return [
         PlatformResultaat(platform="Ukomst", uitvragen=schoon, melding="; ".join(notities))
     ]
