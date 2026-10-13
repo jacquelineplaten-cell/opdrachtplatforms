@@ -224,3 +224,19 @@ def test_poort_blijft_bijten_als_de_drempel_zakt(instellingen, profielen):
         )
         score = beoordeel(u, profielen["Mysia"], aangepast).score
         assert score < drempel, f"drempel {drempel}: poort liet {score} door"
+
+
+def test_uitkomst_komt_in_de_actions_samenvatting(tmp_path, monkeypatch):
+    """Een run die niets verstuurt moet dat zichtbaar maken, niet stil slagen."""
+    from opdrachtalert.main import _meld_uitkomst
+
+    samenvatting = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(samenvatting))
+    _meld_uitkomst(["### Overgeslagen", "", "Laatste verzending: 2026-10-02."])
+    inhoud = samenvatting.read_text(encoding="utf-8")
+    assert "Overgeslagen" in inhoud
+    assert "2026-10-02" in inhoud
+
+    # Zonder de variabele (lokaal draaien) mag het niet stukgaan.
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY")
+    _meld_uitkomst(["niets aan de hand"])

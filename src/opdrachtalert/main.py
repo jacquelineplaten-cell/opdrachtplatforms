@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from dataclasses import asdict
 from datetime import date
@@ -81,6 +82,26 @@ def verzamel(config: dict, profielen, alleen: list[str] | None = None) -> list[P
                 )
             )
     return resultaten
+
+
+def _meld_uitkomst(regels: list[str]) -> None:
+    """Schrijft de uitkomst naar de samenvatting van de GitHub Actions-run.
+
+    Een run die niets verstuurt zag er in de Actions-lijst precies zo uit als een
+    run die wel een mail stuurde: allebei een groen vinkje. Daardoor bleef het op
+    09-10-2026 onopgemerkt dat die week helemaal geen alert uitging. Nu staat de
+    uitkomst in de run zelf.
+    """
+    pad = os.environ.get("GITHUB_STEP_SUMMARY")
+    for regel in regels:
+        log.info("%s", regel)
+    if not pad:
+        return
+    try:
+        with open(pad, "a", encoding="utf-8") as bestand:
+            bestand.write("\n".join(regels) + "\n")
+    except OSError as exc:  # noqa: BLE001 - samenvatting mag de run nooit breken
+        log.debug("Samenvatting niet geschreven: %s", exc)
 
 
 def _bewaar_ruw(resultaten: list[PlatformResultaat], pad: Path) -> None:
@@ -207,21 +228,42 @@ def draai(args: argparse.Namespace) -> int:
         pad.write_text(html, encoding="utf-8")
         log.info("HTML weggeschreven naar %s", pad)
 
+    aantal_matches = sum(len(v) for v in per_persoon.values())
+    met_match = sum(1 for v in per_persoon.values() if v)
+    samenvatting = (
+        f"{len(uitvragen)} uitvragen bekeken, {aantal_matches} matches "
+        f"(score {config['scoring']['drempel']}+) voor {met_match} van de "
+        f"{len(per_persoon)} teamleden"
+    )
+    mislukte_platforms = [r.platform for r in resultaten if not r.gelukt]
+
     if args.droogloop:
         print(tekst)
-        log.info("Droogloop: geen mail verstuurd, geheugen niet bijgewerkt.")
+        _meld_uitkomst([
+            "### Droogloop: geen mail verstuurd",
+            "",
+            samenvatting,
+        ])
         return 0
 
     if geheugen.al_verstuurd_deze_week(vandaag) and not args.forceer:
-        log.info(
-            "Deze week is al een alert verstuurd (%s). Niets gedaan. "
-            "Gebruik --forceer om toch te versturen.",
-            geheugen.laatste_verzending,
-        )
+        _meld_uitkomst([
+            "### Overgeslagen: deze week ging er al een alert uit",
+            "",
+            f"Laatste verzending: {geheugen.laatste_verzending}. "
+            "Dit is de bescherming tegen dubbel verzenden; vink "
+            "\"Ook versturen als er deze week al een alert uitging\" aan om "
+            "toch te versturen.",
+        ])
         return 0
 
     instellingen = MailInstellingen()
     if not instellingen.compleet:
+        _meld_uitkomst([
+            "### Mislukt: mail niet verstuurd",
+            "",
+            f"Ontbrekende instellingen: {', '.join(instellingen.ontbrekend())}",
+        ])
         log.error(
             "Mail niet verstuurd, ontbrekende instellingen: %s",
             ", ".join(instellingen.ontbrekend()),
@@ -233,6 +275,11 @@ def draai(args: argparse.Namespace) -> int:
     geheugen.noteer_verzending(vandaag)
     geheugen.opschonen(vandaag=vandaag)
     geheugen.opslaan()
+
+    regels = ["### Mail verstuurd", "", samenvatting]
+    if mislukte_platforms:
+        regels += ["", f"Niet opgehaald: {', '.join(mislukte_platforms)}"]
+    _meld_uitkomst(regels)
     return 0
 
 

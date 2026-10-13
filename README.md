@@ -179,16 +179,26 @@ Daarna draait hij vanzelf elke vrijdag; je hoeft niets meer te doen.
 repository. Geplande workflows draaien alleen vanaf de default branch, dus de
 vrijdagmail werkt zoals het nu staat. Maak je later een `main` en maak je die
 de default, verplaats deze bestanden dan mee — anders valt de alert stil.
-
 ### Over de planning
 
-De workflow draait elke vrijdag rond 07:00 Nederlandse tijd. GitHub plant op
-UTC, dus er staan twee tijden in (05:00 en 06:00 UTC) — de ene klopt in de
-zomertijd, de andere in de wintertijd. GitHub kan een geplande run bovendien tot
-een uur uitstellen, dus de workflow hanteert een ruim venster (vrijdag tussen
-06:00 en 11:00 lokaal) en bewaakt de alert zélf dat er per week maar één mail
-uitgaat: staat er in `state/gezien.json` al een verzending in deze ISO-week, dan
-stopt hij.
+De workflow draait elke vrijdagochtend. GitHub plant op UTC, dus er staan twee
+tijden in (05:00 en 06:00 UTC): de ene klopt in de zomertijd, de andere in de
+wintertijd, en de tweede is tegelijk een reserve als de eerste wordt
+overgeslagen. Welke van de twee de mail stuurt, maakt niet uit — de alert bewaakt
+zélf dat er per week maar één uitgaat: staat er in `state/gezien.json` al een
+verzending in deze ISO-week, dan stopt hij. Met `--forceer` (of het vinkje bij
+een handmatige run) verstuur je alsnog.
+
+**Er staat bewust geen controle op de lokale tijd in de workflow.** Die zat er
+eerst wel in, om te kiezen tussen de twee cron-tijden. Op 9 oktober 2026 stelde
+GitHub beide geplande runs ruim zes uur uit; ze vielen buiten het venster van
+06:00-11:00, stopten zichzelf, en die week ging er helemaal geen mail uit. Omdat
+een run die niets doet een groen vinkje krijgt, was dat ook niet te zien.
+
+Nu mailt een vertraagde run gewoon later die dag, en zet elke run zijn uitkomst
+in de samenvatting van de Actions-run: "Mail verstuurd", "Overgeslagen: deze week
+ging er al een alert uit", of "Mislukt". `tests/test_workflow.py` houdt die
+tijdcontrole buiten de deur.
 
 ## Lokaal draaien
 
